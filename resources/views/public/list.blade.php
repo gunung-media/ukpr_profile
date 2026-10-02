@@ -1,0 +1,5 @@
+@extends('layouts.public')
+@section('content')
+<section class="um-page-hero"><div class="um-container"><nav class="um-crumbs" aria-label="Breadcrumb"><a href="{{ url('/') }}">Beranda</a><x-icon name="chevron-right"/><span>{{ $title }}</span></nav><h1>{{ $title }}</h1><p>{{ $settings['section-'.$section] ?? 'Temukan informasi dan kabar terbaru dari Universitas Kristen Palangka Raya.' }}</p></div></section>
+<section class="um-section um-light"><div class="um-container"><form class="um-search" method="get"><label for="search" class="sr-only">Cari {{ mb_strtolower($title) }}</label><x-icon name="search"/><input id="search" type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Cari {{ mb_strtolower($title) }}…"><button class="um-btn um-btn-blue" type="submit">Cari</button></form><div class="um-grid">@forelse($items as $card)@include('public.card')@empty<div class="um-empty"><h2>Belum ada konten.</h2><p>Informasi akan dilengkapi oleh pengelola kampus.</p></div>@endforelse</div>{{ $items->links('partials.pagination') }}</div></section>
+@endsection
