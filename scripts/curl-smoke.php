@@ -19,6 +19,8 @@ function expect(bool $condition,string $message): void { global $assertions; $as
 function token(string $path): string { $response=request('GET',$path);expect($response['code']===200,'Form '.$path);preg_match('/name="_token" value="([^"]+)"/',$response['body'],$match);expect(!empty($match[1]),'CSRF token '.$path);return html_entity_decode($match[1]); }
 function login(array $credentials): void { $csrf=token('/login');$r=request('POST','/login',array_merge($credentials,['_token'=>$csrf]));expect($r['code']===302 && str_contains($r['headers'],'/admin'),'Login admin'); }
 try {
+    // Local fixture: a non-staff account sharing the test password must still be refused.
+    $member=App\Models\User::firstOrNew(['email'=>'member@ukpr.test']);$member->forceFill(['name'=>'Member Test','password'=>$credentials['password'],'is_admin'=>false,'role'=>null,'unit_id'=>null])->save();
     $pages=['/','/profil','/sejarah','/visi-misi','/pmb','/kontak','/fakultas','/prodi','/pimpinan','/berita','/agenda','/pengumuman','/fasilitas','/galeri','/login','/sitemap.xml','/robots.txt'];
     foreach(Content::whereIn('kind',array_values(Content::SECTIONS))->published()->get() as $item)$pages[]=parse_url($item->publicUrl(),PHP_URL_PATH);
     foreach(array_unique($pages) as $path){$r=request('GET',$path,[],false);expect($r['code']===200,'Halaman publik '.$path);expect(!str_contains($r['body'],'Exception'),'Tidak ada exception '.$path);}
@@ -30,6 +32,7 @@ try {
         $data=['_token'=>$csrf,'title'=>'Curl test '.$kind,'slug'=>'curl-test-'.$kind,'summary'=>'Pengujian otomatis','body'=>'Konten uji','position'=>99,'is_published'=>1];
         if($kind==='programs')$data['parent_id']=Content::where('kind','faculties')->firstOrFail()->id;
         if($kind==='photos')$data['parent_id']=Content::where('kind','albums')->firstOrFail()->id;
+        if($kind==='quicklinks')$data+=['subtitle'=>'arrow-up-right','link'=>'/pmb'];
         expect(request('POST','/admin/'.$kind,$data,false)['code']===419,'CSRF create '.$kind);
         expect(request('POST','/admin/'.$kind,$data)['code']===302,'Create '.$kind);
         $item=Content::where('kind',$kind)->where('slug',$data['slug'])->firstOrFail();$path='/admin/'.$kind.'/'.$item->id;
